@@ -846,4 +846,25 @@ describe('Static Plugin', () => {
             }
         )
     })
+    it.each([
+        { bunFullstack: false, alwaysStatic: true },
+        { bunFullstack: false, alwaysStatic: false }
+    ])('range request header', async ({ bunFullstack, alwaysStatic }) => {
+        const app = new Elysia().use(
+            staticPlugin({
+                assets: 'public',
+                prefix: '',
+                indexHTML: true,
+                bunFullstack,
+                alwaysStatic
+            })
+        )
+
+        await app.modules
+        const request = req('/html')
+        request.headers.set('range', 'bytes=0-1')
+        const res = await app.handle(request)
+        expect(res.status).toBe(206) // partial request
+        expect((await res.bytes()).length).toBe(2)
+    })
 })
