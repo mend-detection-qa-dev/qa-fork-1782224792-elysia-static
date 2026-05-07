@@ -5,20 +5,15 @@ import { isBun } from '../src/utils'
 import { req } from '../test/utils'
 ;(async () => {
     const app = new Elysia(isBun ? {} : { adapter: node() })
-        .onError(() => {})
-        .get('/*', () => {
-            // if (Math.random() < 0.3) return 'hi'
-            return file('nonexistent')
-        })
-        // .use(
-        //     staticPlugin({
-        //         prefix: '/public',
-        //         assets: 'public/html',
-        //         alwaysStatic: false,
-        //         bunFullstack: false
-        //         // staticLimit: 1
-        //     })
-        // )
+        .use(
+            staticPlugin({
+                prefix: '',
+                assets: 'public',
+                alwaysStatic: false,
+                bunFullstack: true
+                // staticLimit: 1
+            })
+        )
         .listen(3001)
     await app.modules
     // const res = await app.handle(new Request(`http://localhost`))

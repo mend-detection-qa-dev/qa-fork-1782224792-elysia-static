@@ -465,7 +465,6 @@ describe('Static Plugin', () => {
                 expect(res.status).toBe(200)
             }
             for (const invalidPath of ['/public/html', '/public/html/']) {
-                // console.log(path)
                 const res = await app.handle(req(invalidPath))
 
                 expect(res.status).toBe(404)
@@ -585,7 +584,8 @@ describe('Static Plugin', () => {
         await app.modules
 
         const jsFile = await app.handle(req('/public/js/index.js'))
-        expect(jsFile.headers.get('content-type')).toContain('/javascript')
+        expect(jsFile.headers.get('content-type')).toContain('/javascript') // slightly different content-type depending on Bun vs. Node runtime
+        expect(jsFile.headers.get('hii')).toEqual('uwa')
     })
 
     it('preserves content-type on cached file responses', async () => {
