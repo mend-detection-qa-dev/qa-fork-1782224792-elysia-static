@@ -86,13 +86,11 @@ export async function staticPlugin<const Prefix extends string = '/prefix'>({
         seed: prefix
     })
     app.onError(() => {})
-    const files = (await listFiles(path.resolve(assets))).sort(
-        (path1, path2) => {
-            const isHTML1 = path1.endsWith('.html')
-            const isHTML2 = path2.endsWith('.html')
-            return +isHTML2 - +isHTML1
-        }
-    ) // prioritize mounting the html files first, since those must be added (if bunFullstack is true) whether or not we've exceeded staticLimit
+    const files = (await listFiles(assetsDir)).sort((path1, path2) => {
+        const isHTML1 = path1.endsWith('.html')
+        const isHTML2 = path2.endsWith('.html')
+        return +isHTML2 - +isHTML1
+    }) // prioritize mounting the html files first, since those must be added (if bunFullstack is true) whether or not we've exceeded staticLimit
     let staticRoutesMounted = 0
     /** whether or not the `prefix` url (no trailing slash, unless the whole url is `/`) was mounted in the below for-loop */
     let rootPathAlreadyMounted = false
@@ -101,10 +99,6 @@ export async function staticPlugin<const Prefix extends string = '/prefix'>({
         const shouldBundleFileWithBun =
             isBun && bunFullstack && absoluteFilePath.endsWith('.html')
 
-        if (staticRoutesMounted >= staticLimit && !shouldBundleFileWithBun) {
-            // we're skipping this asset, so we'll need the wildcard route generated when alwaysStatic is false
-            alwaysStatic = false // we can't mount any more (non-bun HTML) routes
-        }
         if (
             !absoluteFilePath ||
             shouldIgnore(absoluteFilePath.replace(assetsDir, '')) ||
@@ -112,6 +106,11 @@ export async function staticPlugin<const Prefix extends string = '/prefix'>({
         )
             continue
 
+        if (staticRoutesMounted >= staticLimit && !shouldBundleFileWithBun) {
+            // we're skipping this asset, so we'll need the wildcard route generated when alwaysStatic is false
+            alwaysStatic = false // we can't mount any more (non-bun HTML) routes
+            continue
+        }
         if (!(await fileExists(absoluteFilePath))) {
             if (!silent)
                 console.warn(
@@ -153,16 +152,13 @@ export async function staticPlugin<const Prefix extends string = '/prefix'>({
     ) {
         mountRoute({
             urlPath: `${prefix.endsWith('/') ? prefix.slice(0, -1) : prefix}/*`,
-            absoluteFilePath: (params) => {
-                return normalizePath(
-                    path.resolve(
-                        assets,
-                        decodeURI
-                            ? (fastDecodeURI(params['*']) ?? params['*'])
-                            : params['*']
-                    )
+            absoluteFilePath: (params) =>
+                path.resolve(
+                    assets,
+                    decodeURI
+                        ? (fastDecodeURI(params['*']) ?? params['*'])
+                        : params['*']
                 )
-            }
         })
         if (!rootPathAlreadyMounted) {
             mountRoute({
@@ -210,8 +206,7 @@ export async function staticPlugin<const Prefix extends string = '/prefix'>({
 
         let urlPath = normalizePath(path.join(prefix, relativeFilePath))
 
-        if (!extension)
-            urlPath = normalizePath(urlPath.slice(0, urlPath.lastIndexOf('.')))
+        if (!extension) urlPath = urlPath.slice(0, urlPath.lastIndexOf('.'))
         return urlPath
     }
 
